@@ -1,14 +1,23 @@
 import tkinter as tk
 
+
 def gamepiece_click(event):
 
-    # Determine which square was clicked
-    horizontal_square_pos = (event.x - width_buffer) // square_edge_len
-    vertical_square_pos = (event.y - height_buffer) // square_edge_len
+    x = event.x
+    y = event.y
 
-    # get clicked square object
-    clicked_square = squares[str(horizontal_square_pos) + str(vertical_square_pos)]
-    canvas.itemconfig(clicked_square, fill="blue")
+    # Determine which square was clicked
+    horizontal_square_pos = (x - width_buffer) // square_edge_len
+    vertical_square_pos = (y - height_buffer) // square_edge_len
+
+    # change clicked square color
+    #clicked_square = squares[str(horizontal_square_pos) + str(vertical_square_pos)]
+    #canvas.itemconfig(gamepiece, fill="blue")
+
+    # Move gamepiece to click position
+    canvas.coords(gamepiece, x - checker_dia // 2, y - checker_dia // 2, x + checker_dia // 2, y + checker_dia // 2)
+
+    
     
 
     #if (event.x > 0 and event.x < 50) and (event.y > 0 and event.y < 50):
@@ -55,8 +64,8 @@ for i in range(squares_per_row):
         else:
             square_color = "black"
 
-        # create and store square in dict
-        squares[str(i)+str(j)] = canvas.create_rectangle(
+        # create and store square in dict (squares[x_pos_str + y_pos_str])
+        squares[str(j)+str(i)] = canvas.create_rectangle(
             width_buffer + j*square_edge_len,
             height_buffer + i*square_edge_len,
             width_buffer + (j+1)*square_edge_len,
@@ -72,8 +81,8 @@ for i in range(squares_per_row):
 
 # draw pieces
 gamepiece = canvas.create_oval(
-    width_buffer,
-    height_buffer,
+    width_buffer+10,
+    height_buffer+10,
     width_buffer + checker_dia,
     height_buffer + checker_dia,
     fill = 'grey'
