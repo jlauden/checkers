@@ -1,22 +1,32 @@
 import tkinter as tk
 
 
+
 def gamepiece_click(event):
 
     x = event.x
     y = event.y
 
     # Determine which square was clicked
-    horizontal_square_pos = (x - width_buffer) // square_edge_len
-    vertical_square_pos = (y - height_buffer) // square_edge_len
+    #horizontal_square_pos = (x - width_buffer) // square_edge_len
+    #vertical_square_pos = (y - height_buffer) // square_edge_len
 
-    # change clicked square color
-    #clicked_square = squares[str(horizontal_square_pos) + str(vertical_square_pos)]
-    #canvas.itemconfig(gamepiece, fill="blue")
+    # Relative position of mouse within square
+    x_rel = (x - width_buffer) % square_edge_len
+    y_rel = (y - height_buffer) % square_edge_len
 
-    # Move gamepiece to click position
-    canvas.coords(gamepiece, x - checker_dia // 2, y - checker_dia // 2, x + checker_dia // 2, y + checker_dia // 2)
+    # Center of clicked square
+    x = x - x_rel + square_edge_len // 2
+    y = y - y_rel + square_edge_len // 2
 
+
+    # Move gamepiece to square
+    canvas.coords(
+        gamepiece,
+        x - checker_dia // 2,
+        y - checker_dia // 2,
+        x + checker_dia // 2,
+        y + checker_dia // 2)
     
     
 
