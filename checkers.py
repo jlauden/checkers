@@ -1,24 +1,19 @@
 import tkinter as tk
 
+def move_piece(piece, x, y):
+    '''
+    Takes a reference to an oval object (gamepiece) and coordinates
+    within the destination square.
+    Moves gamepiece to center of destination square.
+    '''
 
-
-def gamepiece_click(event):
-
-    x = event.x
-    y = event.y
-
-    # Determine which square was clicked
-    #horizontal_square_pos = (x - width_buffer) // square_edge_len
-    #vertical_square_pos = (y - height_buffer) // square_edge_len
-
-    # Relative position of mouse within square
+    # Relative position of click within square
     x_rel = (x - width_buffer) % square_edge_len
     y_rel = (y - height_buffer) % square_edge_len
 
     # Center of clicked square
     x = x - x_rel + square_edge_len // 2
     y = y - y_rel + square_edge_len // 2
-
 
     # Move gamepiece to square
     canvas.coords(
@@ -27,11 +22,25 @@ def gamepiece_click(event):
         y - checker_dia // 2,
         x + checker_dia // 2,
         y + checker_dia // 2)
-    
-    
 
-    #if (event.x > 0 and event.x < 50) and (event.y > 0 and event.y < 50):
-    #    canvas.itemconfig(gamepiece, fill="white")
+
+
+def click(event):
+
+    x = event.x
+    y = event.y
+
+    # Determine which square was clicked
+    horizontal_square_pos = (x - width_buffer) // square_edge_len
+    vertical_square_pos = (y - height_buffer) // square_edge_len
+    clicked_square = squares[str(horizontal_square_pos) + str(vertical_square_pos)]
+
+    # Only black squares allowed
+    if canvas.itemcget(clicked_square, "fill") == "black":
+        move_piece(gamepiece, x, y)
+        
+    
+    
 
 # -------- VARIABLES ---------------
 # Board
@@ -63,7 +72,8 @@ canvas = tk.Canvas(
 
 # CREATE BOARD
 red = True  # flag for square color
-squares = {}  # dict to store squares
+squares = {}  # dict to store square objects
+board = {}  # dict to store piece locations
 
 for i in range(squares_per_row):
     for j in range(squares_per_row):
@@ -84,6 +94,9 @@ for i in range(squares_per_row):
             outline = "yellow"
             )
 
+        # create dict to store piece locations
+        board[str(j)+str(i)] = "empty"
+
         # invert square color for next iteration
         # skip last square to get alternating pattern
         if j < (squares_per_row-1):
@@ -91,14 +104,19 @@ for i in range(squares_per_row):
 
 # draw pieces
 gamepiece = canvas.create_oval(
-    width_buffer+10,
-    height_buffer+10,
+    width_buffer + 5,
+    height_buffer + 5,
     width_buffer + checker_dia,
     height_buffer + checker_dia,
     fill = 'grey'
     )
 
-canvas.bind("<Button-1>", gamepiece_click)
+move_piece(
+    gamepiece,
+    width_buffer + square_edge_len,
+    height_buffer)
+
+canvas.bind("<Button-1>", click)
 
 # pack it up
 canvas.pack()
@@ -110,13 +128,3 @@ window.mainloop()
 
 
 
-# add text
-#greeting = tk.Label(text = "Hello World!")
-#greeting.pack()
-
-# add button
-#button = tk.Button(master=window, text="Click Me", command=click_test)
-#button.pack()
-
-# add oval to canvas
-#oval = canvas.create_oval(10, 10, 40, 40)
