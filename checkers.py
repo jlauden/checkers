@@ -93,29 +93,20 @@ def click(event):
     # Case 1: selected piece is clicked again
     # Deselect that piece
     if selected_piece and selected_piece == clicked_position:
-        #print("selected piece was: " + selected_piece)
-        #canvas.itemconfig(board[selected_piece], fill="grey")
+        canvas.itemconfig(board[selected_piece], fill="grey")
         selected_piece = ""
-        #print("selected piece was clicked again")
-        #print("selected piece is now: " + selected_piece)
     # Case 2: no piece selected and piece clicked
     # Select that piece
     elif not selected_piece and board[clicked_position] != "":
-        #print("no piece was selected and a piece was clicked")
-        #print("selected piece was: " + selected_piece)
         selected_piece = clicked_position
         canvas.itemconfig(board[selected_piece], fill="white")
-        #print("selected piece is now: " + selected_piece)
     # Case 3: piece already selected and black square clicked
     # Move the piece
     elif selected_piece and canvas.itemcget(clicked_square, "fill") == "black":
-        #print("piece selected and black square clicked")
-        #print("selected piece was: " + selected_piece)
-        board[clicked_position] = "" # clear existing piece position
         move_piece(board[selected_piece], x, y) # set new piece position
         canvas.itemconfig(board[selected_piece], fill="grey")
+        board[selected_piece] = "" # clear last piece position
         selected_piece = ""
-        #print("selected piece is now: " + selected_piece)
 
 # -------- VARIABLES ---------------
 # Board
@@ -162,6 +153,7 @@ for i in range(squares_per_row):
 
         # create and store square in dict (squares[x_pos_str + y_pos_str])
         squares[str(j)+str(i)] = canvas.create_rectangle(
+            
             width_buffer + j*square_edge_len,
             height_buffer + i*square_edge_len,
             width_buffer + (j+1)*square_edge_len,
@@ -171,20 +163,16 @@ for i in range(squares_per_row):
             outline = "yellow"
             )
 
-        # create dict to store piece locations
-        board[str(j)+str(i)] = ""
+        # draw and store pieces
+        if square_color == "black" and i >= (squares_per_row - 3):
+            board[str(j)+str(i)] = create_piece(j, i)
+        else:
+            board[str(j)+str(i)] = ""
 
         # invert square color for next iteration
         # skip last square to get alternating pattern
         if j < (squares_per_row-1):
             red = not red
-
-# draw pieces
-board["10"] = "piece"
-
-for position in board:
-    if board[position] != "":
-        board[position] = create_piece(position[0], position[1])
 
 
 canvas.bind("<Button-1>", click)
