@@ -15,8 +15,20 @@ def board_position_to_xy(horizontal_pos, vertical_pos):
     y = (int(vertical_pos) + 0.5) * square_edge_len + height_buffer
     return (x, y)
 
+
 def xy_to_board_position(x, y):
-    to_do = "put a function here"
+    '''
+    Takes an x and y coordinate and returns cooresponding
+    position on the board in string 'xy' format
+
+    xy_to_board_position(75, 75)
+    >>>"00"
+    '''
+    horizontal_square_pos = (x - width_buffer) // square_edge_len
+    vertical_square_pos = (y - height_buffer) // square_edge_len
+
+    return str(horizontal_square_pos) + str(vertical_square_pos)
+
 
 def create_piece(horizontal_pos, vertical_pos):
     '''
@@ -42,6 +54,7 @@ def move_piece(piece, x, y):
     Takes a reference to an oval object (gamepiece) and coordinates.
     Moves gamepiece to center of destination square.
     '''
+    global board
 
     # Relative position of click within square
     x_rel = (x - width_buffer) % square_edge_len
@@ -59,6 +72,7 @@ def move_piece(piece, x, y):
         x + checker_dia // 2,
         y + checker_dia // 2)
 
+    board[xy_to_board_position(x, y)] = piece
 
 
 def click(event):
@@ -66,25 +80,42 @@ def click(event):
     x = event.x
     y = event.y
     global selected_piece
+    global board
 
     # Determine which square was clicked
     horizontal_square_pos = (x - width_buffer) // square_edge_len
     vertical_square_pos = (y - height_buffer) // square_edge_len
-    position = str(horizontal_square_pos) + str(vertical_square_pos)
+    clicked_position = str(horizontal_square_pos) + str(vertical_square_pos)
 
     # Get rectangle object of square
-    clicked_square = squares[position]
+    clicked_square = squares[clicked_position]
 
-    # Move piece or select new piece if conditions are met
-    if selected_piece and canvas.itemcget(clicked_square, "fill") == "black":
-        move_piece(board[selected_piece], x, y)
+    # Case 1: selected piece is clicked again
+    # Deselect that piece
+    if selected_piece and selected_piece == clicked_position:
+        #print("selected piece was: " + selected_piece)
+        #canvas.itemconfig(board[selected_piece], fill="grey")
         selected_piece = ""
-    elif board[position] != "":
-        selected_piece = position
+        #print("selected piece was clicked again")
+        #print("selected piece is now: " + selected_piece)
+    # Case 2: no piece selected and piece clicked
+    # Select that piece
+    elif not selected_piece and board[clicked_position] != "":
+        #print("no piece was selected and a piece was clicked")
+        #print("selected piece was: " + selected_piece)
+        selected_piece = clicked_position
         canvas.itemconfig(board[selected_piece], fill="white")
-        
-    
-    
+        #print("selected piece is now: " + selected_piece)
+    # Case 3: piece already selected and black square clicked
+    # Move the piece
+    elif selected_piece and canvas.itemcget(clicked_square, "fill") == "black":
+        #print("piece selected and black square clicked")
+        #print("selected piece was: " + selected_piece)
+        board[clicked_position] = "" # clear existing piece position
+        move_piece(board[selected_piece], x, y) # set new piece position
+        canvas.itemconfig(board[selected_piece], fill="grey")
+        selected_piece = ""
+        #print("selected piece is now: " + selected_piece)
 
 # -------- VARIABLES ---------------
 # Board
@@ -141,7 +172,7 @@ for i in range(squares_per_row):
             )
 
         # create dict to store piece locations
-        board[str(j)+str(i)] = "empty"
+        board[str(j)+str(i)] = ""
 
         # invert square color for next iteration
         # skip last square to get alternating pattern
@@ -152,7 +183,7 @@ for i in range(squares_per_row):
 board["10"] = "piece"
 
 for position in board:
-    if board[position] != "empty":
+    if board[position] != "":
         board[position] = create_piece(position[0], position[1])
 
 
