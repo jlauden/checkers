@@ -1,17 +1,6 @@
 import tkinter as tk
 
 
-
-'''
-Next Up:
- - Create dict to store piece objects for both player and
-   opponent pieces, so the colors can be checked in order
-   to determine whether a piece can be moved or not
-'''
-
-
-
-
 def board_position_to_xy(horizontal_pos, vertical_pos):
     '''
     Takes two integers representing a square on the board and returns
@@ -85,8 +74,20 @@ def move_piece(piece, x, y):
 
     board[xy_to_board_position(x, y)] = piece
 
-#def valid_move(piece_position, target_position):
 
+def valid_move(piece_position, target_position):
+    '''
+    Returns true if the attempted move is valid
+    '''
+
+    x_diff = int(piece_position[0]) - int(target_position[0])
+    y_diff = int(piece_position[1]) - int(target_position[1])
+
+    # target x must be +/- 1, y must be +1 from piece
+    if abs(x_diff) == 1 and y_diff == 1:
+        return True
+    else:
+        return False
     
 
 def click(event):
@@ -118,11 +119,12 @@ def click(event):
                 canvas.itemconfig(board[selected_piece], fill=selected_piece_color)
     # Case 3: piece already selected and black square clicked
     # Move the piece
-    elif selected_piece and canvas.itemcget(clicked_square, "fill") == "black" and board[clicked_position] == "":
-        move_piece(board[selected_piece], x, y) # set new piece position
-        canvas.itemconfig(board[selected_piece], fill=black_piece_color)
-        board[selected_piece] = "" # clear last piece position
-        selected_piece = ""
+    elif (selected_piece and canvas.itemcget(clicked_square, "fill") == "black") and board[clicked_position] == "":
+        if valid_move(selected_piece, clicked_position):
+            move_piece(board[selected_piece], x, y) # set new piece position
+            canvas.itemconfig(board[selected_piece], fill=black_piece_color)
+            board[selected_piece] = "" # clear last piece position
+            selected_piece = ""
 
 
 # -------- VARIABLES ---------------
