@@ -1,6 +1,17 @@
 import tkinter as tk
 
 
+
+'''
+Next Up:
+ - Create dict to store piece objects for both player and
+   opponent pieces, so the colors can be checked in order
+   to determine whether a piece can be moved or not
+'''
+
+
+
+
 def board_position_to_xy(horizontal_pos, vertical_pos):
     '''
     Takes two integers representing a square on the board and returns
@@ -30,7 +41,7 @@ def xy_to_board_position(x, y):
     return str(horizontal_square_pos) + str(vertical_square_pos)
 
 
-def create_piece(horizontal_pos, vertical_pos):
+def create_piece(horizontal_pos, vertical_pos, fill_color):
     '''
     Takes a board position and returns a piece object which is
     created and drawn at the center of starting_square.
@@ -43,7 +54,7 @@ def create_piece(horizontal_pos, vertical_pos):
     y - checker_dia // 2,
     x + checker_dia // 2,
     y + checker_dia // 2,
-    fill = 'grey'
+    fill = fill_color
     )
     return gamepiece
 
@@ -74,6 +85,9 @@ def move_piece(piece, x, y):
 
     board[xy_to_board_position(x, y)] = piece
 
+#def valid_move(piece_position, target_position):
+
+    
 
 def click(event):
 
@@ -90,21 +104,22 @@ def click(event):
     # Get rectangle object of square
     clicked_square = squares[clicked_position]
 
+    
     # Case 1: selected piece is clicked again
     # Deselect that piece
     if selected_piece and selected_piece == clicked_position:
-        canvas.itemconfig(board[selected_piece], fill="grey")
+        canvas.itemconfig(board[selected_piece], fill=black_piece_color)
         selected_piece = ""
     # Case 2: no piece selected and piece clicked
     # Select that piece
     elif not selected_piece and board[clicked_position] != "":
         selected_piece = clicked_position
-        canvas.itemconfig(board[selected_piece], fill="white")
+        canvas.itemconfig(board[selected_piece], fill=selected_piece_color)
     # Case 3: piece already selected and black square clicked
     # Move the piece
-    elif selected_piece and canvas.itemcget(clicked_square, "fill") == "black":
+    elif selected_piece and canvas.itemcget(clicked_square, "fill") == "black" and board[clicked_position] == "":
         move_piece(board[selected_piece], x, y) # set new piece position
-        canvas.itemconfig(board[selected_piece], fill="grey")
+        canvas.itemconfig(board[selected_piece], fill=black_piece_color)
         board[selected_piece] = "" # clear last piece position
         selected_piece = ""
 
@@ -113,7 +128,10 @@ def click(event):
 square_edge_len = 50
 checker_dia = 40
 squares_per_row = 8
-selected_piece = "" 
+selected_piece = ""
+black_piece_color = "grey"
+red_piece_color = "tomato"
+selected_piece_color = "white"
 
 # Window
 width_buffer = 50
@@ -165,7 +183,9 @@ for i in range(squares_per_row):
 
         # draw and store pieces
         if square_color == "black" and i >= (squares_per_row - 3):
-            board[str(j)+str(i)] = create_piece(j, i)
+            board[str(j)+str(i)] = create_piece(j, i, black_piece_color)
+        elif square_color == "black" and i < 3:
+            board[str(j)+str(i)] = create_piece(j, i, red_piece_color)
         else:
             board[str(j)+str(i)] = ""
 
