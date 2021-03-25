@@ -110,11 +110,12 @@ def click(event):
     if selected_piece and selected_piece == clicked_position:
         canvas.itemconfig(board[selected_piece], fill=black_piece_color)
         selected_piece = ""
-    # Case 2: no piece selected and piece clicked
+    # Case 2: no piece selected and black piece clicked
     # Select that piece
     elif not selected_piece and board[clicked_position] != "":
-        selected_piece = clicked_position
-        canvas.itemconfig(board[selected_piece], fill=selected_piece_color)
+        if canvas.itemcget(board[clicked_position], "fill") == black_piece_color:
+                selected_piece = clicked_position
+                canvas.itemconfig(board[selected_piece], fill=selected_piece_color)
     # Case 3: piece already selected and black square clicked
     # Move the piece
     elif selected_piece and canvas.itemcget(clicked_square, "fill") == "black" and board[clicked_position] == "":
@@ -122,6 +123,7 @@ def click(event):
         canvas.itemconfig(board[selected_piece], fill=black_piece_color)
         board[selected_piece] = "" # clear last piece position
         selected_piece = ""
+
 
 # -------- VARIABLES ---------------
 # Board
@@ -181,7 +183,7 @@ for i in range(squares_per_row):
             outline = "yellow"
             )
 
-        # draw and store pieces
+        # draw and store board and pieces
         if square_color == "black" and i >= (squares_per_row - 3):
             board[str(j)+str(i)] = create_piece(j, i, black_piece_color)
         elif square_color == "black" and i < 3:
