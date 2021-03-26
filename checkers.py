@@ -149,6 +149,12 @@ def valid_move(piece_position, target_position):
     # target x must be +/- 1, y must be +1 from piece
     if abs(x_diff) == 1 and y_diff == 1:
         validity = True
+    # or if jump, two spaces diagonally over opponent piece
+    elif abs(x_diff) == 2 and y_diff == 2:
+        middle_position = str(x_diff//2) + str(y_diff//2)
+        if piece_color(middle_position) != piece_color(piece_position):
+            validity = True
+        
     else:
         #print("problem with target square's distance from piece")
         return False
