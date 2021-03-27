@@ -76,6 +76,10 @@ def create_piece(position, fill_color):
     return gamepiece
 
 
+def remove_piece(position):
+    canvas.delete(board[position])
+    board[position] = ""
+
 
 def move_piece(piece_position, target_position):
     '''
@@ -113,20 +117,31 @@ def move_piece(piece_position, target_position):
     #print("piece is now: " + str(piece))
     canvas.tag_raise(piece)
 
+def jump(position, target_position):
+    jumped_x = (int(position[0]) + int(target_position[0])) // 2
+    jumped_y = (int(position[1]) + int(target_position[1])) // 2
+    jumped_position = str(jumped_x) + str(jumped_y)
+    move_piece(position, target_position)
+    remove_piece(jumped_position)
+
 def valid_move(piece_position, target_position):
     '''
     Returns true if the attempted move is valid
     '''
-    (piece_x, piece_y) = (int(piece_position[0]), int(piece_position[1]))
-    (target_x, target_y) = (int(target_position[0]), int(target_position[1]))
 
-
-    # Moves must be within bounds
-    if not (target_y < squares_per_row and target_y >= 0):
+    # Target position may not be negative
+    if '-' in target_position:
+        return False
+    else:
+        (piece_x, piece_y) = (int(piece_position[0]), int(piece_position[1]))
+        (target_x, target_y) = (int(target_position[0]), int(target_position[1]))
+ 
+    # Target must not go beyond board length
+    if not (target_y < squares_per_row):
         #print("tried to move out of bounds vertically")
         #print("target_y is " + str(target_y))
         return False
-    elif not (target_x < squares_per_row and target_x >= 0):
+    elif not (target_x < squares_per_row):
         #print("tried to move out of bounds horizontally")
         return False
 
@@ -136,7 +151,7 @@ def valid_move(piece_position, target_position):
         return False
 
     # Moves must be diagonal
-    x_diff = piece_x - target_x
+    x_diff = abs(piece_x - target_x)
 
     if piece_color(piece_position) == red_piece_color:
         y_diff = target_y - piece_y
@@ -147,10 +162,10 @@ def valid_move(piece_position, target_position):
     #print("y_diff is " + str(y_diff))
 
     # target x must be +/- 1, y must be +1 from piece
-    if abs(x_diff) == 1 and y_diff == 1:
+    if x_diff == 1 and y_diff == 1:
         validity = True
     # or if jump, two spaces diagonally over opponent piece
-    elif abs(x_diff) == 2 and y_diff == 2:
+    elif x_diff == 2 and y_diff == 2:
         middle_position = str(x_diff//2) + str(y_diff//2)
         if piece_color(middle_position) != piece_color(piece_position):
             validity = True
@@ -181,15 +196,19 @@ def computer_move():
 
                 target1 = str(x1) + str(y)
                 target2 = str(x2) + str(y)
-                
+
+                # Check for valid moves
                 if valid_move(position, target1):
                     #print("computer moving piece " + position + " to " + target1)
                     move_piece(position, target1)
-                    global user_turn
-                    user_turn = True
+                    #global user_turn
+                    #user_turn = True
                     return
-                #if valid_move
-                # move option 2
+                elif valid_move(position, target2):
+                    move_piece(position, target2)
+                    #global user_turn
+                    #user_turn = True
+                    return
 
     
 
@@ -225,7 +244,12 @@ def click(event):
     # Move the piece
     elif selected_piece and canvas.itemcget(clicked_square, "fill") == "black":
         if valid_move(selected_piece, clicked_position):
-            move_piece(selected_piece, clicked_position) # set new piece position
+            # Handle jumps vs moves
+            if abs(int(selected_piece[0]) - int(clicked_position[0])) == 2:
+                jump(selected_piece, clicked_position)
+            else:
+                move_piece(selected_piece, clicked_position) # set new piece position
+                
             deselect(clicked_position)
             #time.sleep(1)
 
