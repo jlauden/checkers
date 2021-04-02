@@ -88,14 +88,6 @@ def move_piece(piece_position, target_position):
     '''
     global board
 
-    # Relative position of click within square
-    #x_rel = (x - width_buffer) % square_edge_len
-    #y_rel = (y - height_buffer) % square_edge_len
-
-    # Center of clicked square
-    #x = x - x_rel + square_edge_len // 2
-    #y = y - y_rel + square_edge_len // 2
-
     # Get destination coordinates and piece object to move
     (x, y) = board_position_to_xy(target_position)
     #print("x y coords are " + str(x) + " " + str(y))
@@ -108,6 +100,7 @@ def move_piece(piece_position, target_position):
         y - checker_dia // 2,
         x + checker_dia // 2,
         y + checker_dia // 2)
+    
 
     # Update piece location in board dict
     #print("Piece moved to " + target_position)
@@ -265,7 +258,9 @@ def click(event):
                 move_piece(selected_piece, clicked_position) # set new piece position
                 
             deselect(clicked_position)
-            #time.sleep(1)
+
+            window.update()
+            window.after(2000)
 
             # Computer's turn!
             #print("it's my turn!")
@@ -277,6 +272,7 @@ def click(event):
 # Board
 square_edge_len = 50
 checker_dia = 40
+diagonal_len = round((2*square_edge_len)**0.5)
 squares_per_row = 8
 selected_piece = ""
 black_piece_color = "grey"
