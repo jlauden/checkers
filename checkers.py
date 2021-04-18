@@ -1,6 +1,22 @@
 import tkinter as tk
 import time
 
+
+
+'''
+
+Next steps:
+- Make piece_color() into a piece_type() function that returns either red checker,
+  black checker, red king or black king.
+- Set behavior so that kings can move in any direction
+- Computer should be able to move king if they have one (or several)
+
+'''
+
+
+
+
+
 def board_position_to_xy(position):
     '''
     Takes a string representing a square on the board and returns
@@ -57,7 +73,6 @@ def xy_to_board_position(x, y):
 
     return str(horizontal_square_pos) + str(vertical_square_pos)
 
-
 def create_piece(position, fill_color):
     '''
     Takes a board position and returns a piece object which is
@@ -71,9 +86,26 @@ def create_piece(position, fill_color):
     y - checker_dia // 2,
     x + checker_dia // 2,
     y + checker_dia // 2,
-    fill = fill_color
+    fill = fill_color,
     )
+
     return gamepiece
+
+def make_king(position):
+    '''
+    Takes a board position containing a piece
+    turns that piece into a king by adding a border around the piece
+    '''
+    piece = board[position]
+
+    # Add border (outline) to piece
+    if canvas.itemcget(piece, "fill") == black_piece_color:
+        canvas.itemconfig(piece, outline=black_king_color)
+    else:
+        canvas.itemconfig(piece, outline=red_king_color)
+
+    # Thicken border
+    canvas.itemconfig(piece, width=border_thickness)
 
 
 def remove_piece(position):
@@ -88,7 +120,7 @@ def move_piece(piece_position, target_position):
     '''
     global board
 
-    # Get destination coordinates and piece object to move
+    # Get destination and piece to move
     (x, y) = board_position_to_xy(target_position)
     #print("x y coords are " + str(x) + " " + str(y))
     piece = board[piece_position]
@@ -132,7 +164,7 @@ def valid_move(piece_position, target_position):
         (piece_x, piece_y) = (int(piece_position[0]), int(piece_position[1]))
         (target_x, target_y) = (int(target_position[0]), int(target_position[1]))
  
-    # Target must not go beyond board length
+    # Target must be on the board
     if not (target_y < squares_per_row):
         #print("tried to move out of bounds vertically")
         #print("target_y is " + str(target_y))
@@ -141,12 +173,12 @@ def valid_move(piece_position, target_position):
         #print("tried to move out of bounds horizontally")
         return False
 
-    # Moves must be to an empty square
+    # Target must be an empty square
     if board[target_position] != "":
         #print("board was empty at target position " + target_position)
         return False
 
-    # Moves must be diagonal
+    # Target must be diagonal from selected piece
     x_diff = abs(piece_x - target_x)
 
     # Account for different y direction for comp vs user
@@ -179,8 +211,6 @@ def valid_move(piece_position, target_position):
         #print("problem with target square's distance from piece")
         return False
 
-    # Note: user moves are kept in bounds by restricting clicks to within board
-
     return validity
 
 def computer_move():
@@ -210,26 +240,32 @@ def computer_move():
                     if valid_move(position, target_position):
                         if abs(offset) == 2:
                             jump(position, target_position)
-                            return
+
                         else:
                             move_piece(position, target_position)
-                            return
+                            
+                            #print("target position is " + target_position)
+
+                        # Does computer get a king? 
+                        if int(target_position[1]) == squares_per_row - 1:
+                            make_king(target_position)
+                        return
                             
             
 
-    
+## ----------------- MAIN FUNCTION --------------------------------------------
 
 def click(event):
 
     global selected_piece
     global board
 
-    # Determine which square was clicked
+    # Get location of clicked square
     clicked_position = xy_to_board_position(event.x, event.y)
     horizontal_position = int(clicked_position[0])
     vertical_position = int(clicked_position[1])
 
-    # Ignore clicking outside the board
+    # If click is not on the game board, do nothing
     if horizontal_position < 0 or horizontal_position >= squares_per_row:
         return
     elif vertical_position < 0 or vertical_position >= squares_per_row:
@@ -238,29 +274,40 @@ def click(event):
     # Get rectangle object of square
     clicked_square = squares[clicked_position]
     
-    # Case 1: A piece is selected and is clicked again
-    # Deselect that piece
+    ## CASE 1: DESELECT
+    #  A black piece is clicked but was already selected
     if selected_piece and selected_piece == clicked_position:
+
         deselect(selected_piece)
-    # Case 2: no piece selected and black piece clicked
-    # Select that piece
+        
+    ## CASE 2: SELECT
+    #  A black piece is clicked, was not already selected
     elif not selected_piece and board[clicked_position] != "":
         if piece_color(clicked_position) == black_piece_color:
-                select(clicked_position)
-    # Case 3: piece already selected and black square clicked
-    # Move the piece
+
+            select(clicked_position)
+                
+    ## CASE 3: MOVE
+    #  A black square is clicked, piece was already selected, and move is valid
     elif selected_piece and canvas.itemcget(clicked_square, "fill") == "black":
         if valid_move(selected_piece, clicked_position):
-            # Handle jumps vs moves
+
+            # Jump or move depending on distance between selected piece and clicked square
             if abs(int(selected_piece[0]) - int(clicked_position[0])) == 2:
                 jump(selected_piece, clicked_position)
             else:
-                move_piece(selected_piece, clicked_position) # set new piece position
-                
+                move_piece(selected_piece, clicked_position)
+
+            # The selected piece is now at the clicked position and is deselected
             deselect(clicked_position)
 
+            # If pieces made it to the other side, king me!
+            if piece_color(clicked_position) == black_piece_color and clicked_position[1] == "0":
+                make_king(clicked_position)
+
+            # Delay before computer moves
             window.update()
-            window.after(2000)
+            #window.after(2000)
 
             # Computer's turn!
             #print("it's my turn!")
@@ -269,17 +316,34 @@ def click(event):
 
 
 # -------- VARIABLES ---------------
-# Board
+# Board/Piece Dimensions
 square_edge_len = 50
 checker_dia = 40
+border_thickness = 5
 diagonal_len = round((2*square_edge_len)**0.5)
 squares_per_row = 8
+
+# Board/Piece States
 selected_piece = ""
+red = True  # flag for square color
+
+squares = {}  # dict to store square objects
+
+board = {}  # Keys are two-integer strings representing board position
+            # ie "00" is the top leftmost square.
+            # Value is a piece object if there is a piece on that square
+            # If no piece is present, the value will be set to ""
+
+user_turn = True
+
+# Colors
 black_piece_color = "grey"
 red_piece_color = "tomato"
+black_king_color = "yellow"
+red_king_color = "white"
 selected_piece_color = "white"
 
-# Window
+# Window Dimensions
 width_buffer = 50
 height_buffer = 100
 window_width = (square_edge_len*squares_per_row)+(2*width_buffer)
@@ -287,7 +351,7 @@ window_height = (square_edge_len*squares_per_row)+(2*height_buffer)
 
 user_turn = True
 
-# --------- MAIN SCRIPT --------------
+# --------- INITIALIZE GAME --------------
 # create window
 window = tk.Tk()
 window.geometry(str(window_width) +"x"+ str(window_height))
@@ -302,10 +366,7 @@ canvas = tk.Canvas(
     )
 
 # CREATE BOARD
-red = True  # flag for square color
-squares = {}  # dict to store square objects
-board = {}  # dict to store piece locations
-user_turn = True
+
 
 for i in range(squares_per_row):
     for j in range(squares_per_row):
