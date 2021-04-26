@@ -6,15 +6,13 @@ import time
 '''
 
 Next steps:
-- Make piece_color() into a piece_type() function that returns either red checker,
+X Make piece_color() into a piece_type() function that returns either red checker,
   black checker, red king or black king.
-- Set behavior so that kings can move in any direction
+X Set behavior so that kings can move in any direction
+X Figure out why black pieces can move backwards even if they are not kings
 - Computer should be able to move king if they have one (or several)
 
 '''
-
-
-
 
 
 def board_position_to_xy(position):
@@ -38,6 +36,34 @@ def piece_color(piece_position):
     Takes position and returns fill color of piece at that location.
     '''
     return canvas.itemcget(board[piece_position], "fill")
+
+
+def piece_type(piece_position):
+    '''
+    Takes a position and returns the type of the piece at that location,
+    either "black_piece", "red_piece", "black_king", "red_king".
+
+    piece_type("00")
+    >>>"red_king"
+    '''
+
+    # Get color information from piece
+    fill = canvas.itemcget(board[piece_position], "fill")
+    outline = canvas.itemcget(board[piece_position], "outline")
+
+    # Outline color determines king or checker
+    if outline == "black":
+        status = "checker"
+    else:
+        status = "king"
+
+    # Fill color determines red or black piece
+    if fill == black_piece_color or fill == selected_piece_color:
+        color = "black"
+    else:
+        color = "red"
+        
+    return color + "_" + status
 
 
 def select(piece_position):
@@ -119,6 +145,7 @@ def move_piece(piece_position, target_position):
     Moves gamepiece to center of destination square.
     '''
     global board
+    global window
 
     # Get destination and piece to move
     (x, y) = board_position_to_xy(target_position)
@@ -132,14 +159,11 @@ def move_piece(piece_position, target_position):
         y - checker_dia // 2,
         x + checker_dia // 2,
         y + checker_dia // 2)
-    
+
 
     # Update piece location in board dict
-    #print("Piece moved to " + target_position)
     board[piece_position] = ""
-    #print("piece is now: " + str(piece))
     board[target_position] = piece
-    #print("piece is now: " + str(piece))
     canvas.tag_raise(piece)
 
 def jump(position, target_position):
@@ -166,40 +190,31 @@ def valid_move(piece_position, target_position):
  
     # Target must be on the board
     if not (target_y < squares_per_row):
-        #print("tried to move out of bounds vertically")
-        #print("target_y is " + str(target_y))
         return False
     elif not (target_x < squares_per_row):
-        #print("tried to move out of bounds horizontally")
         return False
 
     # Target must be an empty square
     if board[target_position] != "":
-        #print("board was empty at target position " + target_position)
         return False
 
     # Target must be diagonal from selected piece
     x_diff = abs(piece_x - target_x)
 
-    # Account for different y direction for comp vs user
-    if piece_color(piece_position) == red_piece_color:
+    # Account for allowable y directions in different cases
+    if piece_type(piece_position) == "red_checker":
         y_diff = target_y - piece_y
-    else:
+    elif piece_type(piece_position) == "black_checker":
         y_diff = piece_y - target_y
-
-    #print("x_diff is " + str(x_diff))
-    #print("y_diff is " + str(y_diff))
+    else: # piece is a king
+        y_diff = abs(piece_y - target_y)
 
     # target x must be +/- 1, y must be +1 from piece
     if x_diff == 1 and y_diff == 1:
         validity = True
-    # or if jump, two spaces diagonally over opponent piece
+    # if jump, must be two spaces diagonally over opponent piece
     elif x_diff == 2 and y_diff == 2:
         middle_position = str((piece_x + target_x)//2) + str((piece_y + target_y)//2)
-        #print("Piece position is " + piece_position)
-        #print("middle position is " + middle_position)
-        #print("middle piece color is " + piece_color(middle_position))
-        #print("moved piece color is " + piece_color(piece_position))
         if board[middle_position] != "":
             if piece_color(middle_position) == piece_color(piece_position) and piece_color(piece_position) == red_piece_color:
                 return False
@@ -208,25 +223,17 @@ def valid_move(piece_position, target_position):
             else:
                 validity = True
     else:
-        #print("problem with target square's distance from piece")
         return False
 
     return validity
 
 def computer_move():
-    #print("my turn!")
-    #if not user_turn:
-    #print("my turn! 2")
     # Check for jumps first, then single moves
     for offset in [2, -2, 1, -1]:
         for position in board:
             gamepiece = board[position]
-            #print(board)
-            #print(gamepiece)
             if gamepiece != "":
-                #print("I found a piece to move!")
                 if canvas.itemcget(gamepiece, "fill") == red_piece_color:
-                    #print("and it's red")
                     # options to move piece
 
                     x = int(position[0])
@@ -240,19 +247,14 @@ def computer_move():
                     if valid_move(position, target_position):
                         if abs(offset) == 2:
                             jump(position, target_position)
-
                         else:
                             move_piece(position, target_position)
-                            
-                            #print("target position is " + target_position)
-
                         # Does computer get a king? 
                         if int(target_position[1]) == squares_per_row - 1:
                             make_king(target_position)
                         return
                             
             
-
 ## ----------------- MAIN FUNCTION --------------------------------------------
 
 def click(event):
@@ -307,12 +309,10 @@ def click(event):
 
             # Delay before computer moves
             window.update()
-            #window.after(2000)
+            window.after(1500)
 
             # Computer's turn!
-            #print("it's my turn!")
             computer_move()
-            #user_turn = False
 
 
 # -------- VARIABLES ---------------
@@ -408,12 +408,5 @@ canvas.bind("<Button-1>", click)
 # pack it up
 canvas.pack()
 
-# trying something
-#window.after(1000, computer_move)
-
-
 # main loop with listeners, etc
 window.mainloop()
-
-
-
