@@ -1,32 +1,41 @@
 import tkinter as tk
 import time
+import random
 
 
 
 '''
 
 Next steps:
+
 X Make piece_color() into a piece_type() function that returns either red checker,
   black checker, red king or black king.
 X Set behavior so that kings can move in any direction
 X Figure out why black pieces can move backwards even if they are not kings
+X Debug computer move to figure out why all pieces can get locked up on the right hand side
+X Modify array of "offset" in computer_move() to include lower left and upper right
+  diagonal moves (currently only looks for upper left and lower right quadrants at distances
+  of 2, then 1 away from each piece)
+X Randomize which quadrant is picked first while maintaining jumps first over normal moves
+
 - Computer should be able to move king if they have one (or several)
 
 '''
 
 
-def board_position_to_xy(position):
+def board_position_to_xy(piece_position):
     '''
-    Takes a string representing a square on the board and returns
-    a tuple of the xy coordinates corresponding to the center of the square
+    Takes a string representing a position on the board and returns
+    a tuple (x, y) of coordinates corresponding to the center of the square
     at that board position.
-    Board squares are numbered left to right, top to bottom starting at 0,0.
 
     board_position_to_xy(0, 0)
     >>>(75, 75)
     '''
-    x = (int(position[0]) + 0.5) * square_edge_len + width_buffer
-    y = (int(position[1]) + 0.5) * square_edge_len + height_buffer
+
+    # Calculate coordinates of the center of the square at piece_position
+    x = (int(piece_position[0]) + 0.5) * square_edge_len + width_buffer
+    y = (int(piece_position[1]) + 0.5) * square_edge_len + height_buffer
 
     return (x, y)
 
@@ -34,7 +43,11 @@ def board_position_to_xy(position):
 def piece_color(piece_position):
     '''
     Takes position and returns fill color of piece at that location.
+
+    piece_color("10")
+    >>>"tomato"
     '''
+
     return canvas.itemcget(board[piece_position], "fill")
 
 
@@ -43,7 +56,7 @@ def piece_type(piece_position):
     Takes a position and returns the type of the piece at that location,
     either "black_piece", "red_piece", "black_king", "red_king".
 
-    piece_type("00")
+    piece_type("10")
     >>>"red_king"
     '''
 
@@ -51,13 +64,13 @@ def piece_type(piece_position):
     fill = canvas.itemcget(board[piece_position], "fill")
     outline = canvas.itemcget(board[piece_position], "outline")
 
-    # Outline color determines king or checker
+    # Outline color of piece indicates whether it is a king or a checker
     if outline == "black":
         status = "checker"
     else:
         status = "king"
 
-    # Fill color determines red or black piece
+    # Fill color of piece indicates red/black
     if fill == black_piece_color or fill == selected_piece_color:
         color = "black"
     else:
@@ -68,23 +81,28 @@ def piece_type(piece_position):
 
 def select(piece_position):
     '''
-    Takes a  position, changes color to indicate selection
-    and updates the selection variable to that piece
+    Takes a string as position, changes color to indicate selection
+    and updates the selection variable to that piece.
     '''
+
+    # Update selected_piece variable to new position
     global selected_piece
     selected_piece = piece_position
-    #print("Selected piece: " + selected_piece)
+
+    # Change piece color to indicate that it is selected
     canvas.itemconfig(board[selected_piece], fill=selected_piece_color)
     
+
 def deselect(piece_position):
     '''
-    Takes a piece object, returns color to original piece color
+    Takes a position, returns color to original piece color
     and updates the selection variable to empty
     '''
     global selected_piece
-    #print("Selected piece to be deselected: " + piece_position)
+
     canvas.itemconfig(board[piece_position], fill=black_piece_color)
     selected_piece = ""
+
 
 def xy_to_board_position(x, y):
     '''
@@ -94,15 +112,17 @@ def xy_to_board_position(x, y):
     xy_to_board_position(75, 75)
     >>>"00"
     '''
+
     horizontal_square_pos = (x - width_buffer) // square_edge_len
     vertical_square_pos = (y - height_buffer) // square_edge_len
 
     return str(horizontal_square_pos) + str(vertical_square_pos)
 
+
 def create_piece(position, fill_color):
     '''
-    Takes a board position and returns a piece object which is
-    created and drawn at the center of starting_square.
+    Takes a board position, creates and draws a piece at that position
+    and returns the piece object that was created.
     '''
 
     (x, y) = board_position_to_xy(position)
@@ -117,11 +137,16 @@ def create_piece(position, fill_color):
 
     return gamepiece
 
+
 def make_king(position):
     '''
-    Takes a board position containing a piece
-    turns that piece into a king by adding a border around the piece
+    Takes a board position containing a piece and
+    turns that piece into a king by adding a border around the piece.
+
+    make_king("10")
+    >>>
     '''
+
     piece = board[position]
 
     # Add border (outline) to piece
@@ -130,26 +155,36 @@ def make_king(position):
     else:
         canvas.itemconfig(piece, outline=red_king_color)
 
-    # Thicken border
+    # Set border thickness
     canvas.itemconfig(piece, width=border_thickness)
 
 
-def remove_piece(position):
-    canvas.delete(board[position])
-    board[position] = ""
+def remove_piece(piece_position):
+    '''
+    Takes a position and removes the piece at that position from the board.
+    Updates both the board (dict) and the canvas (display).
+
+    remove_piece("45")
+    >>>
+    '''
+    canvas.delete(board[piece_position])
+    board[piece_position] = ""
 
 
 def move_piece(piece_position, target_position):
     '''
-    Takes a reference to an oval object (gamepiece) and coordinates.
-    Moves gamepiece to center of destination square.
+    Takes a starting and ending position and moves the piece
+    at the starting position to the ending position.
+    Updates both the board (dict) and the canvas (display).
+
+    move_piece("34", "45")
+    >>>
     '''
     global board
     global window
 
     # Get destination and piece to move
     (x, y) = board_position_to_xy(target_position)
-    #print("x y coords are " + str(x) + " " + str(y))
     piece = board[piece_position]
 
     # Move gamepiece to square
@@ -160,18 +195,31 @@ def move_piece(piece_position, target_position):
         x + checker_dia // 2,
         y + checker_dia // 2)
 
-
     # Update piece location in board dict
     board[piece_position] = ""
     board[target_position] = piece
     canvas.tag_raise(piece)
 
-def jump(position, target_position):
-    jumped_x = (int(position[0]) + int(target_position[0])) // 2
-    jumped_y = (int(position[1]) + int(target_position[1])) // 2
+
+def jump(piece_position, target_position):
+    '''
+    Takes current position of a piece and a target position representing a jump move.
+    Moves the piece from it's current position to the target position and removes the
+    piece which was jumped.
+
+    jump("45", "23")
+    >>>
+    '''
+
+    # Calculate position of jumped piece
+    jumped_x = (int(piece_position[0]) + int(target_position[0])) // 2
+    jumped_y = (int(piece_position[1]) + int(target_position[1])) // 2
     jumped_position = str(jumped_x) + str(jumped_y)
-    move_piece(position, target_position)
+
+    move_piece(piece_position, target_position)
+
     remove_piece(jumped_position)
+
 
 def valid_move(piece_position, target_position):
     '''
@@ -198,7 +246,7 @@ def valid_move(piece_position, target_position):
     if board[target_position] != "":
         return False
 
-    # Target must be diagonal from selected piece
+    # X change may be positive or negative
     x_diff = abs(piece_x - target_x)
 
     # Account for allowable y directions in different cases
@@ -228,31 +276,75 @@ def valid_move(piece_position, target_position):
     return validity
 
 def computer_move():
-    # Check for jumps first, then single moves
-    for offset in [2, -2, 1, -1]:
-        for position in board:
-            gamepiece = board[position]
-            if gamepiece != "":
-                if canvas.itemcget(gamepiece, "fill") == red_piece_color:
-                    # options to move piece
+    '''
+    Evaluates the board for possible moves the computer can make, then moves a piece
+    to complete the computer's turn.  Jumps are prioritized over other moves.
+    '''
 
+    # Flag to ensure a move was made
+    move_made = False
+    
+    # The possible changes in position for a given piece if moving or jumping
+    jump_offset_list = [[2, 2], [2, -2], [-2, 2], [-2, -2]] 
+    move_offset_list = [[1, 1], [1, -1], [-1, 1], [-1, -1]]
+
+    # Randomize order in which moves are attempted
+    random.shuffle(jump_offset_list)
+    random.shuffle(move_offset_list)
+
+    # Full list of moves to attempt beginning with jumps, then normal moves
+    
+    jump_offset_list.extend(move_offset_list)
+    offset_list = jump_offset_list
+
+    # Generate list representing board positions and randomize its order
+    randomized_positions = list(board.keys())
+    random.shuffle(randomized_positions)
+
+    # Having this as the outermost loop ensures that no opportunity for a jump will be missed
+    for offset in offset_list:
+        
+        for position in randomized_positions:
+
+            # position must not be empty
+            if board[position] != "":
+                gamepiece = board[position]
+
+                gamepiece_type = piece_type(position)
+
+                # piece at position must be red checker or king
+                if "red" in gamepiece_type:
+
+                    # get x and y parts of piece position
                     x = int(position[0])
                     y = int(position[1])
                     
-                    target_x = x + offset
-                    target_y = y + abs(offset)
+                    # get x and y parts of target position
+                    target_x = x + offset[0]
+                    target_y = y + offset[1]
 
-                    # Check for valid move
+                    # Check for valid move from piece position to target position
                     target_position = str(target_x) + str(target_y)
+
                     if valid_move(position, target_position):
-                        if abs(offset) == 2:
+                        if abs(offset[0]) == 2:
                             jump(position, target_position)
+                            move_made = True
                         else:
                             move_piece(position, target_position)
-                        # Does computer get a king? 
-                        if int(target_position[1]) == squares_per_row - 1:
+                            move_made = True
+
+                        # Computer gets a king if it makes it to the other side! 
+                        if int(target_position[1]) == (squares_per_row - 1) and not gamepiece_type == "red_king":
                             make_king(target_position)
+
+                        # Move has been made, exit function
                         return
+    
+    # If no moves were made out of all pieces, I deserve an explanation.
+    if not move_made:
+        print("It appears the computer is out of moves.  You have won!  (Or something went wrong...)")
+
                             
             
 ## ----------------- MAIN FUNCTION --------------------------------------------
@@ -267,7 +359,7 @@ def click(event):
     horizontal_position = int(clicked_position[0])
     vertical_position = int(clicked_position[1])
 
-    # If click is not on the game board, do nothing
+    # If click is not on the game board, proceed no further!
     if horizontal_position < 0 or horizontal_position >= squares_per_row:
         return
     elif vertical_position < 0 or vertical_position >= squares_per_row:
